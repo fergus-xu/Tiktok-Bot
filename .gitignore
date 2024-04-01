@@ -1,0 +1,10 @@
+archive/
+.idea/
+.venv/
+_pycache_/
+reddit_posts/
+TTS Model/
+*.mp4
+*.wav
+*.mp3
+*.txt

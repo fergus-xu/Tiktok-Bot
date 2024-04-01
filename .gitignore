@@ -6,5 +6,6 @@ reddit_posts/
 TTS Model/
 *.mp4
 *.wav
+*.json
 *.mp3
 *.txt

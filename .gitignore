@@ -1,7 +1,7 @@
 archive/
 .idea/
 .venv/
-_pycache_/
+__pycache__/
 reddit_posts/
 TTS Model/
 *.mp4

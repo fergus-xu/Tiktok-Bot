@@ -6,6 +6,22 @@ def convert_to_mp3(filename):
     return new_filename
 
 
+def convert_to_json(filename):
+    base_name, extension = filename.rsplit(".", 1)
+
+    new_filename = f"{base_name}.json"
+
+    return new_filename
+
+
+def convert_to_webm(filename):
+    base_name, extension = filename.rsplit(".", 1)
+
+    new_filename = f"{base_name}.webm"
+
+    return new_filename
+
+
 def read_settings(file_path):
 
     settings = {}

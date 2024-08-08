@@ -6,6 +6,9 @@ import random
 from aeneas.executetask import ExecuteTask
 from aeneas.task import Task
 import math
+from moviepy.video.fx.all import crop
+
+import helper
 
 
 # generates a random subclip
@@ -48,17 +51,12 @@ def get_sync(audio, transcript, output):
     ExecuteTask(task).execute()
     task.output_sync_map_file()
 
+
 # adds subtitles using forced alignment
-def subtitle(video_file, transcript, output_path):
+def subtitle(video_file, sync_map, output_vid):
     video_clip = VideoFileClip(video_file)
-    config_string = "task_language=eng|is_text_type=plain|os_task_file_format=json"
-    task = Task(config_string=config_string)
-    task.text_file_path_absolute = transcript
-    task.audio_file_path_absolute = video_clip.audio.filename
-    task.sync_map_file_path_absolute = "output_map.json"
-    ExecuteTask(task).execute()
-    sync_map = task.sync_map
     caption_clips = []
+
     for fragment in sync_map:
         start_time = fragment.begin
         end_time = fragment.end
@@ -70,6 +68,29 @@ def subtitle(video_file, transcript, output_path):
         caption_clips.append(caption_clip)
 
     final_clip = CompositeVideoClip([video_clip.set_duration(video_clip.duration), *caption_clips])
-    final_clip.write_videofile(output_path, codec='libx264', audio_codec='aac')
+    final_clip.write_videofile(output_vid, codec='libx264', audio_codec='aac')
+
     video_clip.close()
-    final_clip.close()
+    for clip in caption_clips:
+        clip.close()
+
+
+def clip_size(video_file, output_path):
+    video_clip = VideoFileClip(video_file)
+    width, height = video_clip.size
+
+    crop_width = height * 9/16
+    x1, x2 = (width - crop_width) // 2, (width + crop_width) // 2
+    y1, y2 = 0, height
+    cropped_clip = crop(video_clip, x1=x1, y1=y1, x2=x2, y2=y2)
+
+    cropped_clip.write_videofile(output_path)
+
+
+def make_vid(audio_path, video_path, output_path, transcript):
+    get_subclip(video_path, audio_path, output_path)
+    swap_audio(output_path, audio_path, output_path)
+    json = helper.convert_to_json(audio_path)
+    get_sync(audio_path, transcript, json)
+    subtitle(output_path, json, output_path)
+    clip_size(output_path, output_path)

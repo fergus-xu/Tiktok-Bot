@@ -36,6 +36,7 @@ def make_reddit():
     folder_name = settings.get('folder') # change file naming
     current_directory = os.getcwd()
     new_directory_path = os.path.join(current_directory, folder_name)
+    helper.clean(new_directory_path)
     if not os.path.exists(new_directory_path):
         os.mkdir(new_directory_path)
     if not os.path.exists(f"{new_directory_path}/{subreddit_name}"):

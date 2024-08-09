@@ -6,8 +6,6 @@ import random
 from aeneas.executetask import ExecuteTask
 from aeneas.task import Task
 import math
-from moviepy.video.fx.all import crop
-
 import helper
 
 
@@ -24,25 +22,30 @@ def get_subclip(video_clip: str, audio_clip: str, output_path: str):
     audio_duration = math.ceil(audio.duration)
     video_duration = math.floor(video.duration)
     start_time = random.randint(0, video_duration - audio_duration)
+    print("Starting at " + str(start_time) + " lasting " + str(audio_duration))
+    print("Generating subclip")
     subclip = video.subclip(start_time, start_time + audio_duration)
+    print("Writing video")
     subclip.write_videofile(output_path)
-    subclip.close()
     video.close()
     audio.close()
 
 
-# swaps the audio of the clip to the voice over
+# swaps the audio of the clip to the voice-over
 def swap_audio(clip_path: str, audio_path: str, output_path: str):
     video_clip = VideoFileClip(clip_path)
     audio_clip = AudioFileClip(audio_path)
     video_clip = video_clip.set_audio(audio_clip)
     video_clip.write_videofile(output_path, codec='libx264', audio_codec='aac')
-    video_clip.close()
     audio_clip.close()
 
 
 def get_sync(audio, transcript, output):
+    settings = helper.read_settings("settings.txt")
+    word_count = settings.get('word_count')
+    helper.txt_format(transcript, int(word_count))
     config_string = u"task_language=eng|is_text_type=plain|os_task_file_format=json"
+
     task = Task(config_string=config_string)
     task.audio_file_path_absolute = audio
     task.text_file_path_absolute = transcript
@@ -73,6 +76,32 @@ def subtitle(video_file, sync_map, output_vid):
     video_clip.close()
     for clip in caption_clips:
         clip.close()
+
+
+def crop(clip, x1=None, y1=None, x2=None, y2=None, width=None, height=None, x_center=None, y_center=None):
+
+    if width and x1 is not None:
+        x2 = x1 + width
+    elif width and x2 is not None:
+        x1 = x2 - width
+
+    if height and y1 is not None:
+        y2 = y1 + height
+    elif height and y2 is not None:
+        y1 = y2 - height
+
+    if x_center:
+        x1, x2 = x_center - width / 2, x_center + width / 2
+
+    if y_center:
+        y1, y2 = y_center - height / 2, y_center + height / 2
+
+    x1 = x1 or 0
+    y1 = y1 or 0
+    x2 = x2 or clip.size[0]
+    y2 = y2 or clip.size[1]
+
+    return clip.fl_image(lambda pic: pic[int(y1): int(y2), int(x1): int(x2)], apply_to=["mask"])
 
 
 def clip_size(video_file, output_path):

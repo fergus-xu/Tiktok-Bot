@@ -1,5 +1,6 @@
 import os
 import shutil
+import subprocess
 
 
 def convert_to_mp3(filename):
@@ -68,3 +69,16 @@ def txt_format(file_path, word_count):
     with open(file_path, 'w') as file:
         for line in lines:
             file.write(line + '\n')
+
+
+# Backup subclip using ffmpeg
+def extract_subclip(input_file, output_file, start_time, end_time):
+    command = [
+        "ffmpeg",
+        "-i", input_file,
+        "-ss", start_time,
+        "-to", end_time,
+        "-c", "copy",
+        output_file
+    ]
+    subprocess.run(command)

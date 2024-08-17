@@ -23,6 +23,7 @@ def main():
 
                 output_path = helper.convert_to_mp4(filename)
                 output_path = os.path.join(folder_path, output_path)
-                VidMaker.make_vid(mp3_file, video, output_path, filename)
+                VidMaker.make_vid(mp3_file, video, output_path, filepath)
 if __name__ == '__main__':
     main()
+

@@ -7,6 +7,7 @@ from aeneas.executetask import ExecuteTask
 from aeneas.task import Task
 import math
 import helper
+import json
 
 
 # generates a random subclip
@@ -59,12 +60,14 @@ def get_sync(audio, transcript, output):
 def subtitle(video_file, sync_map, output_vid):
     video_clip = VideoFileClip(video_file)
     caption_clips = []
-
-    for fragment in sync_map:
-        start_time = fragment.begin
-        end_time = fragment.end
-        text = fragment.annotation.text
-        duration = end_time - start_time
+    with open(sync_map, "r") as file:
+        data = json.load(file)
+    fragments = data.get("fragments", [])
+    for fragment in fragments:
+        start_time = fragment.get("begin")
+        end_time = fragment.get("end")
+        text = fragment.get("lines", [])[0]
+        duration = float(end_time) - float(start_time)
         caption_clip = TextClip(text, fontsize=24, color='white', bg_color='black').set_position(
             ('center', 'bottom')).set_duration(duration)
         caption_clip = caption_clip.set_start(start_time)
@@ -117,9 +120,31 @@ def clip_size(video_file, output_path):
 
 
 def make_vid(audio_path, video_path, output_path, transcript):
-    get_subclip(video_path, audio_path, output_path)
-    swap_audio(output_path, audio_path, output_path)
+    # Generate intermediate filepaths
+    folder_path = os.path.dirname(audio_path)
+    subclip_path = os.path.join(folder_path, 'subclip.mp4')
+    dub_path = os.path.join(folder_path, 'dub.mp4')
+    subtitle_path = os.path.join(folder_path, 'subtitle.mp4')
+
+    get_subclip(video_path, audio_path, subclip_path)
+    print("Subclip successfully created")
+    swap_audio(subclip_path, audio_path, dub_path)
+    print("Audio swapped")
     json = helper.convert_to_json(audio_path)
     get_sync(audio_path, transcript, json)
-    subtitle(output_path, json, output_path)
-    clip_size(output_path, output_path)
+    print("Sync map created")
+    subtitle(dub_path, json, subtitle_path)
+    print("Subtitles added")
+    clip_size(subtitle_path, output_path)
+    print("Clipped to size")
+    # add cleanup for intermediates
+    for file_path in [subclip_path, dub_path, subtitle_path]:
+        try:
+            os.remove(file_path)
+            print(f"File '{file_path}' has been deleted.")
+        except FileNotFoundError:
+            print(f"File '{file_path}' does not exist.")
+        except PermissionError:
+            print(f"Permission denied: cannot delete '{file_path}'.")
+        except OSError as e:
+            print(f"Error deleting file '{file_path}': {e}")
